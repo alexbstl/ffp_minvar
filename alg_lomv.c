@@ -1,13 +1,32 @@
 #include "alg_lomv.h"
+#include "assert.h"
+int add(int a, int b)
+{
+    return a + b;
+}
 
+double test(double** a, double** b){
+    return a[1][3] + b[2][2] ;
+}
 
-double linf(int length, double a[1][length], double b[1][length]){
+double linf(int row, int col, double** a, double** b){
+    assert(row ==1 || col == 1);
     double max = 0;
-    for(int i=0; i<length; i++){
-        if (fabs(a[0][i] - b[0][i]) > max){
-            max = fabs(a[0][i] - b[0][i]);
+    if(row == 1){
+        for(int i=0; i<col; i++){
+            if (fabs(a[0][i] - b[0][i]) > max){
+                max = fabs(a[0][i] - b[0][i]);
+            }
         }
     }
+    else if(col == 1){
+        for(int i=0; i<row; i++){
+            if (fabs(a[i][0] - b[i][0]) > max){
+                max = fabs(a[i][0] - b[i][0]);
+            }
+        }
+    }
+    
     return max;
 }
 
@@ -20,37 +39,52 @@ double linf(int length, double a[1][length], double b[1][length]){
     A = Vinv + (B.T @ np.diag(chi)) @ B
     return solve(A,b)
 */
-void psi(int p, int q, double x[q][1], double theta[q][1], double B[p][q], double V[q][q], double Delta[p][p]){
-    double chi[p][1];
-    double B_times_theta[p][1];
-    double comparison[p][1];
-    double b[q][1];
-    //B @ theta
-    mat_mul(p, q, 1, B_times_theta, B, theta);
-    inverse(p, Delta);
+// theta: q-1
+// B: p-q
+// V: q-q
+// Delta: p-p
+// returm: q-1
+double** psi(int p, int q, double** theta, double** B, double** V, double** Delta){
+    double** chi;
+    double** B_theta;
+    double** ones = mat_ones(p,1);
+    double** comparison = mat_zeros(p,1);
+    double** B_T;
+    double** b;
+    double** A;
+
+    // B @ theta
+    // p-1
+    B_theta = mat_mul(p, q, 1, B, theta);
+
     // ones >= B @ theta
     for(int i=0; i<p; i++){
-        comparison[i][0] = (1>=B_times_theta[i][0])? 1:0 ;
+        comparison[i][0] = (1>=B_theta[i][0])? 1:0 ;
     }
+
     // chi = Dinv * (ones >= B @ theta)
-    mat_mul(p,p,1, chi, Delta, comparison);
+    // p-1
+    chi = mat_mul(p, p, 1, inverse(p, Delta), comparison);
+
+    // B.T
+    // q-p
+    B_T = mat_trans(p, q, B);
+
     // b = B.T @ chi
-    double B_T[q][p];
-    mat_trans(p,q, B, B_T);
-    mat_mul(q,p,1, b, B_T, chi);
+    // q-1
+    b = mat_mul(q, p, 1, B_T, chi);
+
     // A = Vinv + (B.T @ np.diag(chi)) @ B
-    inverse(q, V);
-    double chi_diag[p][p];
-    mat_diag(p, chi, chi_diag);
-    double M1[q][p], M2[q][q];
-    mat_mul(q,p,p, M1, B_T, chi_diag);
-    mat_mul(q,p,q, M2, M1, B);
-    double A[q][q];
-    mat_add(q, q, A, V, M2);
+    // q-q
+    double**m1 = mat_mul(q, p, p, B_T, mat_diag(p, mat_trans(p,1, chi)));
+    double**m2 = mat_mul(q,p,q, m1, B);
+    A = mat_add(q, q, inverse(q, V), m2); 
+
     // solve(A,b) by A^-1 * b
-    inverse(q, A);
-    mat_mul(q,q,1, x, A, b);    
+    return mat_mul(q, q, 1, inverse(q, A), b);
 }
+
+
 /* 22.
     def compute_fixed_point (t):
         s = t + 2 * tol
@@ -63,22 +97,29 @@ void psi(int p, int q, double x[q][1], double theta[q][1], double B[p][q], doubl
 
 // 1. An ffp function that only returns theta so far. 
 //    or actually, not returning anything...
-// 2. x[q][1] is the array that we want. 
-void ffp(int p, int q, double x[q][1], double theta[q][1], double B[p][q], double V[q][q], double Delta[p][p]){
-    double th_old[q][1];
+// theta: q-1
+// B: p-q
+// V: q-q
+// Delta: p-p
+// return: q-1
+double** ffp(int p, int q, double** theta, double** B, double** V, double** Delta){
+    //  th_old = t0 - np.inf
+    double** th_old = mat_zeros(q,1);
     for(int i=0; i<q;i++){
         th_old[i][0] = theta[i][0] - INFINITY;
     } 
-    double th_new[q][1];
-    memcpy(th_new, theta, sizeof(th_new));
-    while(linf(q, th_new, th_old) > pow(10, -15)){
+
+    //  th_new = t0
+    double** th_new = theta;
+
+    while(linf(q, 1, th_new, th_old) > pow(10, -15)){
         // th_old = th_new
-        memcpy(th_old, th_new, sizeof(th_old));
+        th_old = th_new;
         // th_new = psi(th_old)
-        psi(p,q,th_new, th_old, B, V, Delta);
+        th_new = psi(p ,q, th_old, B, V, Delta);
     }
 
-    memcpy(x, th_new, sizeof(x));
+    return th_new;
 }
 
 
@@ -92,34 +133,37 @@ void ffp(int p, int q, double x[q][1], double theta[q][1], double B[p][q], doubl
         // unique solution x = w/<w, e>
         return w / sum(w)
 */
-void lo_minvar(int p, int q, double x[p][1], double B[p][q], double V[q][q], double Delta[p][p]){
-    double theta[q][1];
-    double zeros[q][1];
-    mat_zeros(q,1, zeros);
+/* INPUT: 
+   OUTPUT: w/sum(w). p-1
+   x: p-1
+   B: p-q
+   V: q-q
+   Delta: p-p
+*/
+double** lo_minvar(int p, int q, double** B, double** V, double** Delta){
     // theta = psi (np.zeros(q))
-    ffp(p,q,theta, zeros, B, V, Delta);
+    double** theta = ffp(p, q, mat_zeros(q, 1), B, V, Delta);
     // w = Dinv @ maximum(ones - B @ theta, 0)
-    inverse(p, Delta);
-    // @
-    double B_times_theta[p][1];
-    mat_mul(p,q,1, B_times_theta, B, theta);
-    // maximum
-    double comparison[p][1];
+    // B @ theta
+    double** B_Theta = mat_mul(p, q, 1,  B, theta);
+    // maximum(ones - B @ theta, 0)
+    double** comparison = mat_zeros(p,1);
     for(int i=0; i<p; i++){
-        comparison[i][0] = 1>B_times_theta[i][0] ? 1-B_times_theta[i][0]:0 ;
+        comparison[i][0] = 1>B_Theta[i][0] ? 1-B_Theta[i][0]:0 ;
     }
-    // w
-    double w[p][1];
-    mat_mul(p,p,1, w, Delta, comparison);
-    //
+    // w = Dinv @ maximum
+    double** w = mat_mul(p,p,1, inverse(p, Delta), comparison);
+    // sum(w)
     double sum = 0;
     for(int i=0; i<p; i++){
         sum += w[i][0];
     }
+    // return w / sum(w)
     for(int i=0; i<p; i++){
         w[i][0] = w[i][0] / sum;
     }
-    memcpy(x, w, sizeof(w));
+
+    return w;
 }
 
 

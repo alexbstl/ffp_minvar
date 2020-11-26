@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "/Users/yuxiao0228/Desktop/ffp_minvar_c/.venv/bin/python3",
+    "git.ignoreLimitWarning": true,
+    "files.associations": {
+        "algorithm": "c"
+    }
+}

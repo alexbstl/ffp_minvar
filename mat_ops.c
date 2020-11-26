@@ -27,70 +27,105 @@ uint32_t xorshift96(int min, int max){
     return reg_z % (max + 1 - min) + min;
 }
 
+// - initialize array pointer: allocate memory. 
+// - value automatically 00.0
+double* init_arr(int length){
+    double* arr = (double*) malloc(length * sizeof(double));
+    for(int i=0; i<length; i++){
+        arr[i] = 0.0;
+    }
+    return arr;
+}
 
 // Create Matrix of Zeros
-void mat_zeros(int rows, int cols, double mat[rows][cols]){
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++){
-            mat[i][j]=0;
-        }
-    }
+double** mat_zeros(int row, int col){
+    double **mat = (double **)malloc(row * sizeof(double*));
+    for (int i=0; i<row; i++) 
+         mat[i] = (double *)malloc(col * sizeof(double)); 
+    return mat;
 }
 
 
 // Create Matrix of Ones
-void mat_ones(int rows, int cols, double mat[rows][cols]){
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++)
-            mat[i][j]=1;
-    }
+double** mat_ones(int row, int col){
+    double **mat = (double **)malloc(row * sizeof(double*));
+    for (int i=0; i<row; i++) 
+         mat[i] = (double *)malloc(col * sizeof(double)); 
+    for (int i=0; i<row; i++) 
+        for(int j=0; j<col;j++)
+            mat[i][j] = 1.0;
+    return mat;
+}
+
+
+// initialize with random value under max
+double** mat_rand(int row, int col, int max){
+    double **mat = (double **)malloc(row * sizeof(double*));
+    for (int i=0; i<row; i++) 
+         mat[i] = (double *)malloc(col * sizeof(double)); 
+    for (int i=0; i<row; i++) 
+        for(int j=0; j<col;j++)
+            mat[i][j] = rand() % max;
+    return mat;
 }
 
 
 // Matrix Multiplication
-void mat_mul(int m, int p, int n, double product[m][n], double mat_l[m][p], double mat_r[p][n]) {
+double** mat_mul(int m, int p, int n, double** mat_l, double** mat_r)
+{
+    double** product = mat_zeros(m, n);
     // Require: mat_l is m x p and mat_r is p x n.
     int i, j, k;
     // matrix multiplication
     for (i = 0; i < m; i++ )
         for (j = 0; j < n; j++ )
             for (k = 0; k < p; k++ )
-                product[i][j] = mat_l[i][k] * mat_r[k][j];
+                product[i][j] += mat_l[i][k] * mat_r[k][j];
+    return product;
 }
 
 
 // Matrix Transpose
-void mat_trans(int rows, int cols, double mat_old[rows][cols], double mat_new[cols][rows]){
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++){
+double** mat_trans(int row, int col, double** mat_old)
+{
+    double** mat_new = mat_zeros(row, col);
+    for(int i=0; i<row; i++){
+        for(int j=0; j<col; j++){
             mat_new[j][i] = mat_old[i][j];
         }
     }
+    return mat_new;
 }
 
 
 // Construct diagonal matrix from vector
-void mat_diag(int length, double vec[length][1], double mat[length][length]){
-    mat_zeros(length, length, mat);
-    for(int i=0; i<length; i++){           
-        mat[i][i] = vec[i][0];
+double** mat_diag(int col, double** arr)
+{
+    double** mat = mat_zeros(col, col);
+    for(int i=0; i<col; i++){           
+        mat[i][i] = arr[0][i];
     }
+    return mat;
 }
 
 
-void mat_add(int m, int n, double result[m][n], double mat1[m][n], double mat2[m][n]){
+double** mat_add(int m, int n, double** mat1, double** mat2)
+{
+    double** result = mat_zeros(m, n);
     for(int i=0; i<m; i++){
         for(int j=0; j<n; j++){
             result[i][j] = mat1[i][j] + mat2[i][j];
         }
     }
+    return result;
 }
 
 
 /*For calculating Determinant of the Matrix */
-double determinant(int init_k, int order, double a[init_k][init_k])
+double determinant(int init_k, int order, double** a)
 {
-    double s = 1, det = 0, b[init_k][init_k];
+    double s = 1, det = 0;
+    double** b = mat_zeros(init_k, init_k);
     int i, j, m, n, c;
     if (order == 1)
         {
@@ -129,14 +164,16 @@ double determinant(int init_k, int order, double a[init_k][init_k])
 }
 
 // Default requirement: num is squre.
-void inverse(int f, double num[f][f])
+double** inverse(int f, double** num)
 {
     double det = determinant(f,f, num);
     if(det == 0.0){
         printf("Inverse of this matrix is impossible!\n");
+        return NULL;
     }
     else{
-        double b[f][f], fac[f][f];
+        double** b = mat_zeros(f,f);
+        double** fac = mat_zeros(f,f);
         int p, q, m, n, i, j;
         for (q = 0;q < f; q++){
             for (p = 0;p < f; p++){
@@ -160,12 +197,13 @@ void inverse(int f, double num[f][f])
             }
         }
 
-        mat_trans(f,f, fac, num);
+        double** inv_num = mat_trans(f,f, fac);
 
         for(int i=0; i<f; i++){
             for(int j=0; j<f; j++){
-                num[i][j] = num[i][j]/det;
+                inv_num[i][j] = inv_num[i][j]/det;
             }
         }
+        return inv_num;
     }
 }

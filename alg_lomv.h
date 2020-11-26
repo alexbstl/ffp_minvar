@@ -2,13 +2,18 @@
 #define ALG_LOMV
 
 #include "mat_ops.h"
+#include "string.h"
 
-double linf(int length, double a[1][length], double b[1][length]);
+int add(int a, int b);
 
-void psi(int p, int q, double x[q][1], double theta[q][1], double B[p][q], double V[q][q], double Delta[p][p]);
+double test(double** a, double** b);
 
-void ffp(int p, int q, double x[q][1], double theta[q][1], double B[p][q], double V[q][q], double Delta[p][p]);
+double linf(int row, int col, double** a, double** b);
 
-void lo_minvar(int p, int q, double x[p][1], double B[p][q], double V[q][q], double Delta[p][p]);
+double** psi(int p, int q, double** theta, double** B, double** V, double** Delta);
+
+double** ffp(int p, int q, double** theta, double** B, double** V, double** Delta);
+
+double** lo_minvar(int p, int q, double** B, double** V, double** Delta);
 
 #endif
