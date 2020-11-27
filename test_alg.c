@@ -8,12 +8,15 @@ double test_linf(){
 }
 
 
+void test_psi(){
+    return;
+} 
 
 int main(){
     srand(time(NULL));
     //double result = test_linf();
     //printf("%f\n", result);
-    printf("%f\n", test_linf());
+    //printf("%f\n", test_linf());
 /*
     for(int i=0; i<5; i++){
         a[i] = (double) (rand() % 51);

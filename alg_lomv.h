@@ -4,9 +4,15 @@
 #include "mat_ops.h"
 #include "string.h"
 
+void free_ptr(int r, double **p);
+
 int add(int a, int b);
 
 double test(double** a, double** b);
+
+double* test_p(double** a, double** b);
+
+double** test_pp(double** a, double** b);
 
 double linf(int row, int col, double** a, double** b);
 

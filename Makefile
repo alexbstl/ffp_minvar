@@ -5,6 +5,8 @@ TARGET_TALG = test_alg
 test_alg: test_alg.c  alg_lomv.o  mat_ops.o 
 	$(CC) -o $(TARGET_TALG) test_alg.c  alg_lomv.o  mat_ops.o 
 
+test_mem_leak: test_mem_leak.c mat_ops.o 
+	$(CC) -o test_mem_leak	test_mem_leak.c	 mat_ops.o 
 
 test_mat_ops: test_mat_ops.c mat_ops.o
 	$(CC) -o $(TARGET_TMO) test_mat_ops.c mat_ops.o

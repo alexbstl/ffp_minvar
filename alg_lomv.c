@@ -1,5 +1,14 @@
 #include "alg_lomv.h"
 #include "assert.h"
+
+// Need to pass by reference
+void free_ptr(int r, double **p){
+    for(int i=0; i<r; i++){
+        free(p[i]);
+    }
+    free(p);
+}
+
 int add(int a, int b)
 {
     return a + b;
@@ -8,6 +17,26 @@ int add(int a, int b)
 double test(double** a, double** b){
     return a[1][3] + b[2][2] ;
 }
+
+
+double* test_p(double** a, double** b){
+    double* ptr = (double*) malloc(1 * sizeof(double));
+    ptr[0] = a[1][3] + b[2][2];
+    return ptr;
+}
+
+
+double** test_pp(double** a, double** b){
+    double **ptr = (double **)malloc(3 * sizeof(double*));
+    for (int i=0; i<3; i++) 
+         ptr[i] = (double *)malloc(4 * sizeof(double)); 
+
+    ptr[0][1] = a[1][3] + b[2][2];
+    ptr[1][2] = a[3][3] + b[1][2];
+    return ptr;
+}
+
+
 
 double linf(int row, int col, double** a, double** b){
     assert(row ==1 || col == 1);
@@ -81,7 +110,17 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
     A = mat_add(q, q, inverse(q, V), m2); 
 
     // solve(A,b) by A^-1 * b
-    return mat_mul(q, q, 1, inverse(q, A), b);
+    double** x = mat_mul(q, q, 1, inverse(q, A), b);
+
+    free all ptrs
+    free_ptr(p, chi);
+    free_ptr(p, B_theta);
+    free_ptr(p, ones);
+    free_ptr(p, comparison);
+    free_ptr(q, B_T);
+    free_ptr(q, b);
+    free_ptr(q, A);
+    return x;
 }
 
 
