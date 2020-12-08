@@ -4,8 +4,6 @@
 #include "mat_ops.h"
 #include "string.h"
 
-void free_ptr(int r, double **p);
-
 int add(int a, int b);
 
 double test(double** a, double** b);

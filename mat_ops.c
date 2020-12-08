@@ -27,6 +27,15 @@ uint32_t xorshift96(int min, int max){
     return reg_z % (max + 1 - min) + min;
 }
 
+
+// Need to pass by reference
+void free_ptr(int r, double **p){
+    for(int i=0; i<r; i++){
+        free(p[i]);
+    }
+    free(p);
+}
+
 // - initialize array pointer: allocate memory. 
 // - value automatically 00.0
 double* init_arr(int length){
@@ -59,13 +68,13 @@ double** mat_ones(int row, int col){
 
 
 // initialize with random value under max
-double** mat_rand(int row, int col, int max){
+double** mat_rand(int row, int col, double min, double max){
     double **mat = (double **)malloc(row * sizeof(double*));
     for (int i=0; i<row; i++) 
          mat[i] = (double *)malloc(col * sizeof(double)); 
     for (int i=0; i<row; i++) 
         for(int j=0; j<col;j++)
-            mat[i][j] = rand() % max;
+            mat[i][j] = min + (rand() /(RAND_MAX / (max - min)));
     return mat;
 }
 
@@ -121,89 +130,105 @@ double** mat_add(int m, int n, double** mat1, double** mat2)
 }
 
 
-/*For calculating Determinant of the Matrix */
-double determinant(int init_k, int order, double** a)
-{
-    double s = 1, det = 0;
-    double** b = mat_zeros(init_k, init_k);
-    int i, j, m, n, c;
-    if (order == 1)
-        {
-        return (a[0][0]);
-        }
-    else
-        {
-        det = 0;
-        for (c = 0; c < order; c++)
-        {
-            m = 0;
-            n = 0;
-            for (i = 0;i < order; i++)
-            {
-                for (j = 0 ;j < order; j++)
-                {
-                    b[i][j] = 0;
-                    if (i != 0 && j != c)
-                    {
-                    b[m][n] = a[i][j];
-                    if (n < (order - 2))
-                        n++;
-                    else
-                        {
-                        n = 0;
-                        m++;
-                        }
-                    }
-                }
-            }
-            det = det + s * (a[0][c] * determinant(init_k, order - 1, b));
-            s = -1 * s;
-        }
+/* This determinant use Doolittle LU decomposition to calculate determinant 
+   det(mat) = det(L)det(U) = det(U) = d1*d2*....*dk, where dk are the diagonal entries. */
+
+double determinant(int dim, double** mat){
+    // Gaussian elimination
+    double ratio = 0;
+    for(int i=0;i<dim;i++){
+		if(mat[i][i] == 0.0){
+		    printf("Mathematical Error!");
+		    exit(0);
+	    }
+		for(int j=i+1;j<dim;j++){
+			ratio = mat[j][i]/mat[i][i];
+			for(int k=i; k<dim; k++){
+			  	mat[j][k] = mat[j][k] - ratio*mat[i][k];
+			}
+		}
+	}
+
+    double det = 1;
+    for(int i=0; i<dim; i++){
+        det = det* mat[i][i];
     }
-    return (det);
+    return det;
 }
 
-// Default requirement: num is squre.
-double** inverse(int f, double** num)
+
+// Default requirement: mat is squre.
+// 1. calculate cofactor(mat)
+// 2. adj(mat) = C^T
+// 3. inv(mat = adj(mat)/det(mat)
+double** inverse(int dim, double** mat)
 {
-    double det = determinant(f,f, num);
+    double det = determinant(dim, mat);
     if(det == 0.0){
         printf("Inverse of this matrix is impossible!\n");
         return NULL;
     }
     else{
-        double** b = mat_zeros(f,f);
-        double** fac = mat_zeros(f,f);
-        int p, q, m, n, i, j;
-        for (q = 0;q < f; q++){
-            for (p = 0;p < f; p++){
-                m = 0;
-                n = 0;
-                for (i = 0;i < f; i++){
-                    for (j = 0;j < f; j++){
-                        if (i != q && j != p){
-                            b[m][n] = num[i][j];
-                            if (n < (f - 2))
-                                n++;
-                            else{
-                                n = 0;
-                                m++;
-                            }
+        // 1. calculate cofactor(mat)
+        double** cofactor = mat_zeros(dim, dim);
+        // cofactor_ij = (-1)^(i+j) * Minor_ij
+        for(int i=0; i<dim; i++){
+            for(int j=0; j<dim; j++){
+                // construct minor matrix of element A_ij, 
+                // for purpose of calculating determinant
+                double** minor = mat_zeros(dim-1, dim-1);
+                for(int p=0; p<dim-1; p++){
+                    for(int q=0; q<dim-1; q++){
+                        if(p!=i && q==j){
+                            minor[p][q] = mat[i][j+1];
+                        }
+                        if(p==i && q!=j){
+                            minor[p][q] = mat[i+1][j];
+                        }
+                        if(p==i && q==j){
+                            minor[p][q] = mat[i+1][j+1];
+                        }
+                        if(p!=i && q!=j){
+                            minor[p][q] = mat[i][j];
                         }
                     }
                 }
-                // Find the cofactor matrix and after dividing each entry with its determinant
-                fac[q][p] = pow((double)-1, (double) (q + p)) * determinant(f, f - 1, b);
+                cofactor[i][j] = (double)pow(-1, i+j)  * determinant(dim-1, minor);
+                free_ptr(dim-1, minor);
             }
         }
 
-        double** inv_num = mat_trans(f,f, fac);
+        // 2. adj(mat) = C^T
+        double** adjoint = mat_trans(dim, dim, cofactor);
+        free_ptr(dim, cofactor);
 
-        for(int i=0; i<f; i++){
-            for(int j=0; j<f; j++){
-                inv_num[i][j] = inv_num[i][j]/det;
+        // 3. inv(mat = adj(mat)/det(mat)
+        double** inv = mat_zeros(dim,dim);
+        for(int i=0; i<dim; i++){
+            for(int j=0; j<dim; j++){
+                inv[i][j] = adjoint[i][j] / det;
             }
         }
-        return inv_num;
+        free_ptr(dim, adjoint);
+        return inv;
+    }
+}
+
+
+void print_mat(int r, int c, double** mat){
+    for(int i=0; i<r; i++){
+        for(int j=0; j<c; j++){
+            printf("%f  ",  mat[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+// both dimension of **new should be greater than **old
+void copy_mat(int r, int c, double** new, double** old){
+    for(int i=0; i<r; i++){
+        for(int j=0; j<c; j++){
+            new[i][j] = old[i][j];
+        }
     }
 }

@@ -1,14 +1,6 @@
 #include "alg_lomv.h"
 #include "assert.h"
 
-// Need to pass by reference
-void free_ptr(int r, double **p){
-    for(int i=0; i<r; i++){
-        free(p[i]);
-    }
-    free(p);
-}
-
 int add(int a, int b)
 {
     return a + b;
@@ -68,12 +60,14 @@ double linf(int row, int col, double** a, double** b){
     A = Vinv + (B.T @ np.diag(chi)) @ B
     return solve(A,b)
 */
+// p-q : 500-4 from .py
 // theta: q-1
 // B: p-q
 // V: q-q
 // Delta: p-p
 // returm: q-1
 double** psi(int p, int q, double** theta, double** B, double** V, double** Delta){
+    raise(SIGTRAP);
     double** chi;
     double** B_theta;
     double** ones = mat_ones(p,1);
@@ -91,9 +85,15 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
         comparison[i][0] = (1>=B_theta[i][0])? 1:0 ;
     }
 
+    // For this special case, because D is diagonal,
+    // so Dinv is just 1/diag
     // chi = Dinv * (ones >= B @ theta)
     // p-1
-    chi = mat_mul(p, p, 1, inverse(p, Delta), comparison);
+    double** Dinv = Delta;
+    for(int i=0; i<p; i++){
+        Dinv[i][i] = 1/Dinv[i][i];
+    }
+    chi = mat_mul(p, p, 1, Dinv, comparison);
 
     // B.T
     // q-p
@@ -105,14 +105,23 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
 
     // A = Vinv + (B.T @ np.diag(chi)) @ B
     // q-q
-    double**m1 = mat_mul(q, p, p, B_T, mat_diag(p, mat_trans(p,1, chi)));
+    double** chi_T = mat_trans(p,1, chi);
+    double** chi_D = mat_diag(p, chi_T);
+    double**m1 = mat_mul(q, p, p, B_T, chi_D);
     double**m2 = mat_mul(q,p,q, m1, B);
-    A = mat_add(q, q, inverse(q, V), m2); 
+
+    double** Vinv = V;
+    for(int i=0; i<q; i++){
+        Vinv[i][i] = 1/Vinv[i][i];
+    }
+
+    A = mat_add(q, q, Vinv, m2); 
 
     // solve(A,b) by A^-1 * b
-    double** x = mat_mul(q, q, 1, inverse(q, A), b);
+    double** Ainv = inverse(q, A);
+    double** x = mat_mul(q, q, 1, Ainv, b);
 
-    free all ptrs
+    //free all ptrs
     free_ptr(p, chi);
     free_ptr(p, B_theta);
     free_ptr(p, ones);
@@ -120,6 +129,11 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
     free_ptr(q, B_T);
     free_ptr(q, b);
     free_ptr(q, A);
+    free_ptr(p, Dinv);
+    free_ptr(1, chi_T);
+    free_ptr(p,chi_D);
+    free_ptr(q, Vinv);
+    free_ptr(q, Ainv);
     return x;
 }
 
