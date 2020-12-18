@@ -2,8 +2,8 @@
 
 double test_linf(){
     int length = 5;
-    double** a = mat_rand(1,5,20);
-    double** b = mat_rand(1,5,15);
+    double** a = mat_rand(1,5,0, 20);
+    double** b = mat_rand(1,5,0, 15);
     free_ptr(1,a);
     free_ptr(1,b);
     return linf(1, length, a, b);
@@ -12,51 +12,72 @@ double test_linf(){
 
 void test_psi_1(){
     double** theta = mat_zeros(4,1);
-    double** B = mat_rand(20,4, 30);
-    double** V = mat_rand(4,4, 30);
-    double** arr = mat_rand(1,20, 30);
-    double** Delta = mat_diag(20, arr);
+    double** B = mat_rand(10,4,0, 30);
+    double** V = mat_rand(4,4,0, 30);
+    double** arr = mat_rand(1,10,0, 30);
+    double** Delta = mat_diag(10, arr);
     
-
-    double** x = psi(20, 4, theta, B, V, Delta);
+    double** x = psi(10, 4, theta, B, V, Delta);
     free_ptr(4, theta);
-    free_ptr(20, B);
+    free_ptr(10, B);
     free_ptr(4, V);
     free_ptr(1, arr);
-    free_ptr(20, Delta);
-    //free_ptr(4, x);
+    free_ptr(10, Delta);
+
+    print_mat(4,1,x);
+    free_ptr(4, x);
+} 
+
+void test_ffp_1(){
+    double** theta = mat_zeros(4,1);
+    double** B = mat_rand(10,4,0, 30);
+    double** V = mat_rand(4,4,0, 30);
+    double** arr = mat_rand(1,10,0, 30);
+    double** Delta = mat_diag(10, arr);
+    
+
+    double** w = ffp(10, 4, theta, B, V, Delta);
+    free_ptr(4, theta);
+    free_ptr(10, B);
+    free_ptr(4, V);
+    free_ptr(1, arr);
+    free_ptr(10, Delta);
+
+    print_mat(4,1,w);
+    free_ptr(4, w);
+} 
+
+void test_lo_minvar(){
+    double** B = mat_rand(10,4,0, 30);
+    double** V = mat_rand(4,4,0, 30);
+    double** arr = mat_rand(1,10,0, 30);
+    double** Delta = mat_diag(10, arr);
+    
+    double** w = lo_minvar(10, 4, B, V, Delta);
+
+    free_ptr(10, B);
+    free_ptr(4, V);
+    free_ptr(1, arr);
+    free_ptr(10, Delta);
+
+    print_mat(4,1,w);
+    free_ptr(4, w);
 } 
 
 // when declaring pointers, definitely 
 // DO NOT declare it inside a function call.
 // It causes serious memory leak!
 int main(){
-    //raise(SIGTRAP);
-    //srand(time(NULL));
+    clock_t begin = clock();
+    double time_used;
+
     //double result = test_linf();
     //printf("%f\n", result);
     //printf("%f\n", test_linf());
-    test_psi_1();
-    //free_ptr(4, x);
-/*
-    for(int i=0; i<5; i++){
-        a[i] = (double) (rand() % 51);
-    }
-    for(int i=0; i<5; i++){
-        b[i] = (double) (rand() % 51);
-    }
-    double result = test(a, b);
+    //test_psi_1();
+    // test_ffp_1();
+    test_lo_minvar();
 
-    printf("%f\n", result);
-
-    int row = 3;
-    int col = 4;
-    double **arr = (double **)malloc(row * sizeof(double*));
-    for (int i=0; i<row; i++) 
-         arr[i] = (double *)malloc(col * sizeof(double)); 
-    
-    for (int i = 0; i < row; i++) 
-      for (int j = 0; j < col; j++) 
-         printf("%f ", arr[i][j]); */
-
+    time_used = (double) (clock() - begin) / CLOCKS_PER_SEC;
+    printf("time used: %f\n", time_used);
 }

@@ -1,4 +1,4 @@
-#include "mat_ops.h"
+#include "gaussian.h"
 
 bool check_nonzero_row(int current, int dim, double** mat){
     for(int i=current+1; i<dim; i++){
@@ -156,9 +156,9 @@ double** RREF(int dim, double** mat){
         double pivot_col = erase_zeros_above(row_bound, col_bound, dim, mat);
         // If there are no more columns containing leading ones to the left of
         // the pivot column, the matrix is in RREF. Done. 
-        if(check_pivot_col(pivot_col, dim, mat) == false){
+        /*if(check_pivot_col(pivot_col, dim, mat) == false){
             break;
-        }
+        }*/
         row_bound--;
         col_bound--;
     }
@@ -174,83 +174,9 @@ double** RREF(int dim, double** mat){
 }
 
 
-
-int main(){
-    clock_t begin = clock();
-    double time_used;
-
-    //---------------- Dim of 2 -------------------//
-    double** mat2 = mat_zeros(2, 2);
-    /*
-    mat2[0][0] = 2;
-    mat2[0][1] = 4;
-    mat2[1][0] = 0;
-    mat2[1][1] = 1;*/
-    mat2[0][0] = 9;
-    mat2[0][1] = 0;
-    mat2[1][0] = 0;
-    mat2[1][1] = 4;
-
-
-    int dim2 = 2;
-    double** temp2 = REF(dim2, mat2);
-    double** new2 = RREF(dim2, temp2);
-
-    print_mat(dim2, dim2, mat2);
-    print_mat(dim2, dim2, new2);
-
-    free_ptr(dim2, mat2);
-    free_ptr(dim2, temp2);
-    free_ptr(dim2, new2);
-    
-
-    //---------------- Dim of 3 -------------------//
-    double** mat3 = mat_zeros(3, 3);
-    /*
-    mat3[0][0] = 0;
-    mat3[0][1] = 0;
-    mat3[0][2] = 1;
-    mat3[1][0] = 1;
-    mat3[1][1] = 0;
-    mat3[1][2] = 2;
-    mat3[2][0] = 0;
-    mat3[2][1] = 3;
-    mat3[2][2] = 0;*/
-    
-    /*
-    mat3[0][0] = 0;
-    mat3[0][1] = -3;
-    mat3[0][2] = -2;
-    mat3[1][0] = 1;
-    mat3[1][1] = -4;
-    mat3[1][2] = -2;
-    mat3[2][0] = -3;
-    mat3[2][1] = 4;
-    mat3[2][2] = 1;*/
-
-    mat3[0][0] = 2;
-    mat3[0][1] = 0;
-    mat3[0][2] = 0;
-    mat3[1][0] = 0;
-    mat3[1][1] = 3;
-    mat3[1][2] = 0;
-    mat3[2][0] = 0;
-    mat3[2][1] = 0;
-    mat3[2][2] = 5;
-
-    int dim3 = 3;
-    double** temp3 = REF(dim3, mat3);
-    double** new3 = RREF(dim3, temp3);
-
-    // print test: dim of 3
-    print_mat(dim3, dim3, mat3);
-    print_mat(dim3, dim3, new3);
-    // free pointers: dim of 2
-    free_ptr(dim3, mat3);
-    free_ptr(dim3, temp3);
-    free_ptr(dim3, new3);
-
-
-    time_used = (double) (clock() - begin) / CLOCKS_PER_SEC;
-    printf("time used: %f\n", time_used);
+double** inv(int dim, double** mat){
+    double** temp = REF(dim, mat);
+    double** inv = RREF(dim, temp);
+    free_ptr(dim, temp);
+    return inv;
 }

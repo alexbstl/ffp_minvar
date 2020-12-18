@@ -11,10 +11,12 @@ test_mem_leak: mat_ops.o test_mem_leak.c
 test_mat_ops: mat_ops.o test_mat_ops.c 
 	$(CC) -o $(TARGET_TMO) test_mat_ops.c mat_ops.o -lm -g
 
+test_gaussian: mat_ops.o test_gaussian.c  
+	$(CC) -o test_gaussian mat_ops.o test_gaussian.c -lm -g 
 
-gaussian: mat_ops.o gaussian.c  
-	$(CC) -o gaussian gaussian.c mat_ops.o -lm -g 
 
+gaussian.o: gaussian.c
+	$(CC) -c -o gaussian.o gaussian.c -g
 
 alg_lomv.o: alg_lomv.c
 	$(CC) -c -o alg_lomv.o alg_lomv.c -g

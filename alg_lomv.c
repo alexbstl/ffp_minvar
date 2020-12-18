@@ -6,29 +6,6 @@ int add(int a, int b)
     return a + b;
 }
 
-double test(double** a, double** b){
-    return a[1][3] + b[2][2] ;
-}
-
-
-double* test_p(double** a, double** b){
-    double* ptr = (double*) malloc(1 * sizeof(double));
-    ptr[0] = a[1][3] + b[2][2];
-    return ptr;
-}
-
-
-double** test_pp(double** a, double** b){
-    double **ptr = (double **)malloc(3 * sizeof(double*));
-    for (int i=0; i<3; i++) 
-         ptr[i] = (double *)malloc(4 * sizeof(double)); 
-
-    ptr[0][1] = a[1][3] + b[2][2];
-    ptr[1][2] = a[3][3] + b[1][2];
-    return ptr;
-}
-
-
 
 double linf(int row, int col, double** a, double** b){
     assert(row ==1 || col == 1);
@@ -67,7 +44,6 @@ double linf(int row, int col, double** a, double** b){
 // Delta: p-p
 // returm: q-1
 double** psi(int p, int q, double** theta, double** B, double** V, double** Delta){
-    raise(SIGTRAP);
     double** chi;
     double** B_theta;
     double** ones = mat_ones(p,1);
@@ -89,10 +65,7 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
     // so Dinv is just 1/diag
     // chi = Dinv * (ones >= B @ theta)
     // p-1
-    double** Dinv = Delta;
-    for(int i=0; i<p; i++){
-        Dinv[i][i] = 1/Dinv[i][i];
-    }
+    double** Dinv = inv(p, Delta);
     chi = mat_mul(p, p, 1, Dinv, comparison);
 
     // B.T
@@ -108,17 +81,14 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
     double** chi_T = mat_trans(p,1, chi);
     double** chi_D = mat_diag(p, chi_T);
     double**m1 = mat_mul(q, p, p, B_T, chi_D);
-    double**m2 = mat_mul(q,p,q, m1, B);
+    double**m2 = mat_mul(q,p, q, m1, B);
 
-    double** Vinv = V;
-    for(int i=0; i<q; i++){
-        Vinv[i][i] = 1/Vinv[i][i];
-    }
+    double** Vinv = inv(q, V);
 
     A = mat_add(q, q, Vinv, m2); 
 
     // solve(A,b) by A^-1 * b
-    double** Ainv = inverse(q, A);
+    double** Ainv = inv(q, A);
     double** x = mat_mul(q, q, 1, Ainv, b);
 
     //free all ptrs
@@ -132,6 +102,8 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
     free_ptr(p, Dinv);
     free_ptr(1, chi_T);
     free_ptr(p,chi_D);
+    free_ptr(q,m1);
+    free_ptr(q,m2);
     free_ptr(q, Vinv);
     free_ptr(q, Ainv);
     return x;
@@ -163,15 +135,21 @@ double** ffp(int p, int q, double** theta, double** B, double** V, double** Delt
     } 
 
     //  th_new = t0
-    double** th_new = theta;
+    double** th_new = mat_zeros(q,1);
+    copy_mat(q,1, th_new, theta);
 
     while(linf(q, 1, th_new, th_old) > pow(10, -15)){
+        // free space before assign new values
+        double** temp = th_old;
+        free_ptr(q, temp);
         // th_old = th_new
         th_old = th_new;
         // th_new = psi(th_old)
         th_new = psi(p ,q, th_old, B, V, Delta);
     }
+    
 
+    free_ptr(q, th_old);
     return th_new;
 }
 
@@ -195,7 +173,8 @@ double** ffp(int p, int q, double** theta, double** B, double** V, double** Delt
 */
 double** lo_minvar(int p, int q, double** B, double** V, double** Delta){
     // theta = psi (np.zeros(q))
-    double** theta = ffp(p, q, mat_zeros(q, 1), B, V, Delta);
+    double** zeros = mat_zeros(q, 1);
+    double** theta = ffp(p, q, zeros, B, V, Delta);
     // w = Dinv @ maximum(ones - B @ theta, 0)
     // B @ theta
     double** B_Theta = mat_mul(p, q, 1,  B, theta);
@@ -205,7 +184,8 @@ double** lo_minvar(int p, int q, double** B, double** V, double** Delta){
         comparison[i][0] = 1>B_Theta[i][0] ? 1-B_Theta[i][0]:0 ;
     }
     // w = Dinv @ maximum
-    double** w = mat_mul(p,p,1, inverse(p, Delta), comparison);
+    double** Dinv = inv(p, Delta);
+    double** w = mat_mul(p,p,1, Dinv, comparison);
     // sum(w)
     double sum = 0;
     for(int i=0; i<p; i++){
@@ -215,6 +195,13 @@ double** lo_minvar(int p, int q, double** B, double** V, double** Delta){
     for(int i=0; i<p; i++){
         w[i][0] = w[i][0] / sum;
     }
+
+    // free space
+    free_ptr(q, zeros);
+    free_ptr(q, theta);
+    free_ptr(p, B_Theta);
+    free_ptr(p, comparison);
+    free_ptr(p, Dinv);
 
     return w;
 }

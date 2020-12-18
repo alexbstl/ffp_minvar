@@ -16,8 +16,6 @@ uint32_t xorshift96(int min, int max);
 
 void free_ptr(int r, double **p);
 
-double* init_arr(int length);
-
 double** mat_zeros(int row, int col);
 
 double** mat_ones(int row, int col);
@@ -32,13 +30,11 @@ double** mat_diag(int col, double** arr);
 
 double** mat_add(int m, int n, double** mat1, double** mat2);
 
-double determinant(int dim, double** mat);
-
-double** inverse(int f, double** num);
-
 void print_mat(int r, int c, double** mat);
 
 void copy_mat(int r, int c, double** new, double** old);
+
+double** inv(int dim, double** mat);
 
 #endif
 
