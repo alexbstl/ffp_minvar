@@ -1,5 +1,4 @@
 #include "alg_lomv.h"
-#include "assert.h"
 
 int add(int a, int b)
 {
@@ -7,20 +6,22 @@ int add(int a, int b)
 }
 
 
-double linf(int row, int col, double** a, double** b){
+double linf(int row, int col, gsl_matrix * a, gsl_matrix * b){
     assert(row ==1 || col == 1);
     double max = 0;
     if(row == 1){
         for(int i=0; i<col; i++){
-            if (fabs(a[0][i] - b[0][i]) > max){
-                max = fabs(a[0][i] - b[0][i]);
+            double diff = fabs(gsl_matrix_get(a, 0, i) - gsl_matrix_get(b, 0, i));
+            if (diff > max){
+                max = diff;
             }
         }
     }
     else if(col == 1){
         for(int i=0; i<row; i++){
-            if (fabs(a[i][0] - b[i][0]) > max){
-                max = fabs(a[i][0] - b[i][0]);
+            double diff = fabs(gsl_matrix_get(a, i, 0) - gsl_matrix_get(b, i, 0));
+            if (diff > max){
+                max = diff;
             }
         }
     }
@@ -33,79 +34,97 @@ double linf(int row, int col, double** a, double** b){
 /* 21. 
     def psi(theta):
     chi = Dinv * (ones >= B @ theta)
-    b = B.T @ chi
+    b = B.T @ chi  # q-1
     A = Vinv + (B.T @ np.diag(chi)) @ B
     return solve(A,b)
 */
 // p-q : 500-4 from .py
-// theta: q-1
-// B: p-q
-// V: q-q
-// Delta: p-p
-// returm: q-1
-double** psi(int p, int q, double** theta, double** B, double** V, double** Delta){
-    double** chi;
-    double** B_theta;
-    double** ones = mat_ones(p,1);
-    double** comparison = mat_zeros(p,1);
-    double** B_T;
-    double** b;
-    double** A;
+// theta: q-1, 4-1
+// B: p-q, 500-4
+// V: q-q, 4-4
+// Delta: p-p, 500-500  
+// return: q-1, 4-1
 
-    // B @ theta
+// ** use unsigned int (x)
+// ** pass in delta as vector of all diagnoals. Saved memory.
+gsl_vector * psi(int p, int q, gsl_vector * theta, gsl_matrix * B, gsl_matrix * V, gsl_vector * Delta){
+    gsl_vector *  B_theta = gsl_vector_alloc(p);
+    gsl_vector * comparison = gsl_vector_alloc(p);
+    gsl_vector * chi = gsl_vector_alloc(p);
+    gsl_vector * b = gsl_vector_alloc(q);;
+
+    // B_theta: B @ theta
     // p-1
-    B_theta = mat_mul(p, q, 1, B, theta);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, B, theta, 0.0, B_theta);
 
-    // ones >= B @ theta
+    // comparison: ones >= B @ theta
+    // p-1
     for(int i=0; i<p; i++){
-        comparison[i][0] = (1>=B_theta[i][0])? 1:0 ;
+        double value = (250 >= gsl_vector_get(B_theta, i)) ? 1.0:0.0; // change to 1.0 for formal use
+        gsl_vector_set(comparison, i, value);
     }
 
-    // For this special case, because D is diagonal,
-    // so Dinv is just 1/diag
+    // D is diagonal, so Dinv is just 1/diag
+    gsl_matrix * Dinv = gsl_matrix_alloc(p, p);
+    gsl_matrix_set_zero(Dinv);
+    for(int i=0; i<p; i++){
+        double diag_inv = 1/gsl_vector_get(Delta, i);
+        gsl_matrix_set(Dinv, i, i, diag_inv);
+    }
+
     // chi = Dinv * (ones >= B @ theta)
     // p-1
-    double** Dinv = inv(p, Delta);
-    chi = mat_mul(p, p, 1, Dinv, comparison);
-
-    // B.T
-    // q-p
-    B_T = mat_trans(p, q, B);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, Dinv, comparison, 0.0, chi);
 
     // b = B.T @ chi
     // q-1
-    b = mat_mul(q, p, 1, B_T, chi);
+    gsl_blas_dgemv(CblasTrans, 1.0, B, chi, 0.0, b);
 
     // A = Vinv + (B.T @ np.diag(chi)) @ B
-    // q-q
-    double** chi_T = mat_trans(p,1, chi);
-    double** chi_D = mat_diag(p, chi_T);
-    double**m1 = mat_mul(q, p, p, B_T, chi_D);
-    double**m2 = mat_mul(q,p, q, m1, B);
+    // V memory will be modified by the gsl_linalg_LU_decomp. 
+    int s;
+    gsl_permutation * perm = gsl_permutation_alloc(q);
+    gsl_matrix * Vinv = gsl_matrix_alloc(q, q);
+    gsl_linalg_LU_decomp(V, perm, &s);
+    gsl_linalg_LU_invert(V, perm, Vinv);
 
-    double** Vinv = inv(q, V);
+    // B.T @ np.diag(chi)
+    gsl_matrix * temp1 = gsl_matrix_alloc(q, p);
+    gsl_matrix * chi_D = gsl_matrix_alloc(p, p);
+    gsl_matrix_set_zero(chi_D);
+    for(int i=0; i<p; i++){
+        gsl_matrix_set(chi_D, i, i, gsl_vector_get(chi, i));
+    }
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, B, chi_D, 0.0, temp1);
 
-    A = mat_add(q, q, Vinv, m2); 
+    // ~ @ B
+    gsl_matrix * temp2 = gsl_matrix_alloc(q, q);
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, temp1, B, 0.0, temp2);
+    
+    //gsl_matrix_fprintf(stdout, temp1, "%g");
+    gsl_matrix_fprintf(stdout, temp2, "%g");
+    printf("-------------------\n");
 
-    // solve(A,b) by A^-1 * b
-    double** Ainv = inv(q, A);
-    double** x = mat_mul(q, q, 1, Ainv, b);
+    // the sum will be stored in Vinv. A is in fact Vinv.
+    gsl_matrix_add(Vinv, temp2);
 
-    //free all ptrs
-    free_ptr(p, chi);
-    free_ptr(p, B_theta);
-    free_ptr(p, ones);
-    free_ptr(p, comparison);
-    free_ptr(q, B_T);
-    free_ptr(q, b);
-    free_ptr(q, A);
-    free_ptr(p, Dinv);
-    free_ptr(1, chi_T);
-    free_ptr(p,chi_D);
-    free_ptr(q,m1);
-    free_ptr(q,m2);
-    free_ptr(q, Vinv);
-    free_ptr(q, Ainv);
+    // Use gsl_linalg_lU_decomp + gsl_linalg_lu_solve. (BLAS gsl_blas_dtrsv?)
+    gsl_vector * x = gsl_vector_alloc(q);
+    gsl_linalg_LU_decomp(Vinv, perm, &s);
+    gsl_linalg_LU_solve(Vinv, perm, b, x);
+
+    //free all created matrices and vectors
+    gsl_vector_free(B_theta);
+    gsl_vector_free(comparison);
+    gsl_vector_free(chi);
+    gsl_vector_free(b);
+    gsl_matrix_free(Dinv);
+    gsl_permutation_free(perm);
+    gsl_matrix_free(Vinv);
+    gsl_matrix_free(temp1);
+    gsl_matrix_free(chi_D);
+    gsl_matrix_free(temp2);
+
     return x;
 }
 
@@ -119,7 +138,7 @@ double** psi(int p, int q, double** theta, double** B, double** V, double** Delt
 
         return(s)
 */
-
+/*
 // 1. An ffp function that only returns theta so far. 
 //    or actually, not returning anything...
 // theta: q-1
@@ -145,6 +164,8 @@ double** ffp(int p, int q, double** theta, double** B, double** V, double** Delt
         // th_old = th_new
         th_old = th_new;
         // th_new = psi(th_old)
+        // ** memory issue ****
+        // ** Just pass in th_new to psi. Work on the th_new memory from psi. No need to return double pointer.
         th_new = psi(p ,q, th_old, B, V, Delta);
     }
     
@@ -155,7 +176,7 @@ double** ffp(int p, int q, double** theta, double** B, double** V, double** Delt
 
 
 // Slides 11 eq. For verifying theorem1.
-/* 23.
+/* 23. 
     def lo_weights ():
         theta = psi (np.zeros(q))
         // w is a fixed point of psi, i.e., w = psi(w)
@@ -171,6 +192,7 @@ double** ffp(int p, int q, double** theta, double** B, double** V, double** Delt
    V: q-q
    Delta: p-p
 */
+/*
 double** lo_minvar(int p, int q, double** B, double** V, double** Delta){
     // theta = psi (np.zeros(q))
     double** zeros = mat_zeros(q, 1);

@@ -34,23 +34,22 @@ void free_ptr(int r, double **p){
         free(p[i]);
     }
     free(p);
+    p = NULL;
 }
 
 
 // Create Matrix of Zeros
 double** mat_zeros(int row, int col){
-    double **mat = (double **)malloc(row * sizeof(double*));
+    double **mat = malloc(row * sizeof(double*));
     for (int i=0; i<row; i++) 
-         mat[i] = (double *)malloc(col * sizeof(double)); 
+         mat[i] = malloc(col * sizeof(double)); 
     return mat;
 }
 
 
 // Create Matrix of Ones
 double** mat_ones(int row, int col){
-    double **mat = (double **)malloc(row * sizeof(double*));
-    for (int i=0; i<row; i++) 
-         mat[i] = (double *)malloc(col * sizeof(double)); 
+    double **mat = mat_zeros(row, col);
     for (int i=0; i<row; i++) 
         for(int j=0; j<col;j++)
             mat[i][j] = 1.0;
@@ -60,9 +59,7 @@ double** mat_ones(int row, int col){
 
 // initialize with random value under max
 double** mat_rand(int row, int col, double min, double max){
-    double **mat = (double **)malloc(row * sizeof(double*));
-    for (int i=0; i<row; i++) 
-         mat[i] = (double *)malloc(col * sizeof(double)); 
+    double **mat = mat_zeros(row, col);
     for (int i=0; i<row; i++) 
         for(int j=0; j<col;j++)
             mat[i][j] = min + (rand() /(RAND_MAX / (max - min)));
