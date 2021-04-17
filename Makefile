@@ -1,38 +1,28 @@
 CC = gcc
-TARGET_TMO = test_mat_ops
-TARGET_TALG = test_alg
+LIBS = -lm -lgsl -lgslcblas # gsl flags
 
-test_gsl: test_gsl.c
-	$(CC) -Wall test_gsl.c -lm -lgsl -lgslcblas -o test_gsl
+SRC_DIR := src
+OBJ_DIR := obj
+SHARED_DIR := shared
+TEST_DIR = test
 
-test_alg: alg_lomv.o test_alg.c  
-	$(CC) -Wall alg_lomv.o test_alg.c -lm -lgsl -lgslcblas -o test_alg -g 
+TEST_GSL := $(TEST_DIR)/test_gsl.c
+TEST_ALG := $(TEST_DIR)/test_alg.c
+ALG_LOMV_SRC := $(SRC_DIR)/alg_lomv.c
+ALG_LOMV_OBJ := $(OBJ_DIR)/alg_lomv.o
+ALG_LOMV_SO := $(SHARED_DIR)/alg_lomv.so
 
-test_mem_leak: mat_ops.o test_mem_leak.c 
-	$(CC) -o test_mem_leak	test_mem_leak.c	 mat_ops.o -lm -g
+test_gsl: $(TEST_GSL)
+	$(CC) -Wall $(TEST_GSL) $(LIBS) -o test_gsl
 
-test_mat_ops: mat_ops.o test_mat_ops.c 
-	$(CC) -o $(TARGET_TMO) test_mat_ops.c mat_ops.o -lm -g
+test_alg: $(ALG_LOMV_OBJ) $(TEST_ALG)
+	$(CC) -Wall $(ALG_LOMV_OBJ) $(TEST_ALG) $(LIBS) -o test_alg -g 
 
-test_gaussian: mat_ops.o test_gaussian.c  
-	$(CC) -o test_gaussian mat_ops.o test_gaussian.c -lm -g 
+alg_lomv.o: $(TEST_ALG)
+	$(CC) -c -o $(ALG_LOMV_OBJ) $(ALG_LOMV_SRC) -g
 
-test_malloc: test_malloc.c  
-	$(CC) -o test_malloc test_malloc.c -g 
+alg_lomv.so: $(ALG_LOMV_SRC)
+	$(CC) -shared -o $(ALG_LOMV_SO) $(ALG_LOMV_SRC) $(LIBS) -g
 
-gaussian.o: gaussian.c
-	$(CC) -c -o gaussian.o gaussian.c -g
-
-alg_lomv.o: alg_lomv.c
-	$(CC) -c -o alg_lomv.o alg_lomv.c -g
-
-alg_lomv.so: mat_ops.o alg_lomv.c
-	$(CC) -shared -o alg_lomv.so mat_ops.o alg_lomv.c -g
-
-mat_ops.o: mat_ops.c
-	$(CC) -c -o mat_ops.o mat_ops.c -g
-
-
- 
 clean:
-	-rm -f *.o *.so
+	-rm -f *.o *.gch test_gsl test_alg

@@ -333,7 +333,7 @@ if (lo_var > lo_var_numeric):
     print("* Warning! Numerical minimum is lower. *")
     print("****************************************")
 
-
+print(f"lo_mv['x']: {lo_mv['x']}")
 
 
 
