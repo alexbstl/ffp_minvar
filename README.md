@@ -6,7 +6,7 @@ GSL
   - [OSX](#osx)
   - [Ubuntu](#ubuntu)
 - [Compilation and Test](#Compilation)
-  - [Compile .so file](#.so)
+  - [Compile .so file](#Shared)
   - [Test in python](#PythonTests)
   - [Tests in c](#CTests)
 
@@ -62,7 +62,7 @@ You'll now be able to include GSL into your code from anywhere.
 
 # Compilation
 
-## .so
+## Shared
 To compile the .so file of the algorithm used by the python package, use this command under root folder. 
 ```bash
 make alg_lomv.so
