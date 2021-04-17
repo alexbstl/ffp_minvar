@@ -1,7 +1,13 @@
 {
-    "python.pythonPath": "/Users/yuxiao0228/Desktop/ffp_minvar_c/.venv/bin/python3",
+    "python.pythonPath": "/usr/local/bin/python3.7",
     "git.ignoreLimitWarning": true,
     "files.associations": {
-        "algorithm": "c"
+        "algorithm": "c",
+        "__locale": "c",
+        "gsl_permutation.h": "c",
+        "gsl_linalg.h": "c",
+        "__string": "c",
+        "string": "c",
+        "string_view": "c"
     }
 }
