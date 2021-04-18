@@ -15,7 +15,7 @@ FFP_MINVAR
 
 `shared` folder stores the .so file used by the python package.
 
-`include` folder contains the heaer file of the algorithm.
+`include` folder contains the header file of the algorithm.
 
 `src` folder contains the C file of the algorithm.
 
