@@ -67,7 +67,7 @@ To compile the .so file of the algorithm used by the python package, use this co
 ```bash
 make alg_lomv.so
 ```
-## PythonTests
+## PythonTest
 To run the test of the python package:
 1. Compile the .so file
 2. Make sure that your current python interpreter has installed `numpy`, `ctypes`, `pdb`, and `pathlib`.
@@ -76,7 +76,7 @@ To run the test of the python package:
     python test_lib.py
     ```
 
-## CTests
+## CTest
 To compile the test of the algorithm in c, use this command under root folder:
 ```bash
 make test_alg
