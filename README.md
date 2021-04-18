@@ -1,6 +1,6 @@
 FFP_MINVAR
 ===
-**Table of Contents**
+# Table of Contents
 - [Description](#Description)
 - [Installation](#installation)
   - [OSX](#osx)
