@@ -7,8 +7,8 @@ FFP_MINVAR
   - [Ubuntu](#ubuntu)
 - [Compilation and Test](#Compilation)
   - [Compile .so file](#Shared)
-  - [Test in python](#PythonTests)
-  - [Tests in c](#CTests)
+  - [Test in python](#PythonTest)
+  - [Test in c](#CTest)
 
 # Description
 `lib` folder stores the python package of the wrapped C code that can be directly imported in other python files. 
