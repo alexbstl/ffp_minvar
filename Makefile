@@ -3,7 +3,7 @@ LIBS = -lm -lgsl -lgslcblas # gsl flags
 
 SRC_DIR := src
 OBJ_DIR := obj
-SHARED_DIR := shared
+SHARED_DIR := lib/ffp_minvar/shared
 TEST_DIR = test
 
 TEST_GSL := $(TEST_DIR)/test_gsl.c

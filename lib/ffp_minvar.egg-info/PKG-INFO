@@ -1,3 +1,20 @@
+Metadata-Version: 2.1
+Name: ffp-minvar
+Version: 0.1.0
+Summary: rewritten python package of ffp_minvar algorithm
+Home-page: https://github.com/luciusluo/ffp_minvar
+Author: Lucius Luo
+Author-email: lucius0228@gmail.com
+License: UNKNOWN
+Project-URL: Bug Tracker, https://github.com/luciusluo/ffp_minvar/issues
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
 FFP_MINVAR
 ===
 # Table of Contents
@@ -142,3 +159,4 @@ To compile the test of the algorithm in c, use this command under root folder:
 make test_alg
 ./test_alg
 ```
+

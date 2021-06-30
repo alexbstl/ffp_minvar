@@ -1,6 +1,7 @@
-import lib.ffp_minvar_lib as alg_lib
-from lib.ffp_minvar_lib import *
+from ffp_minvar import ffp_minvar_lib
+# from lib.ffp_minvar import ffp_minvar_lib
 
+import numpy as np
 
 if __name__ == "__main__":
 
@@ -46,27 +47,29 @@ if __name__ == "__main__":
         B[:, k] = beta
 
     V = np.diag(fvar)
-    theta = np.zeros(k)
+    theta = np.zeros(K)
 
     """
     print("------------ python B ------------")
     print(B)
     print("------------ python V ------------")
     print(V)
-    print("------------ python Delta ------------")
-    print(D)
     """
+    print("------------ python Delta ------------")
+    print(type(D))
+    
+
+
     #---------------------- ffp Test ----------------------------#
     print("------------ ffp Test ------------")
-    ffp_res = alg_lib.ffp(theta, B, V, D)  
+    ffp_res = ffp_minvar_lib.ffp(theta, B, V, D)  
     print(ffp_res)
     
     #---------------------- Psi Test ----------------------------#
     print("------------ Psi Test ------------")
-    psi_res = alg_lib.psi(B, V, D)  
+    psi_res = ffp_minvar_lib.psi(B, V, D)  
     print(psi_res)
     #---------------------- lo_minvar Test ----------------------------#
     print("------------ lo_minvar Test ------------")
-    lo_minvar_res = alg_lib.lo_minvar(B, V, D)
+    lo_minvar_res = ffp_minvar_lib.lo_minvar(B, V, D)
     print(lo_minvar_res)
-    

@@ -2,8 +2,6 @@ from ctypes import *
 import ctypes
 from pathlib import Path
 import numpy as np
-import time
-import pdb
 
 # helper function to help convert numpy array to 
 # the double** in c functions
@@ -35,6 +33,12 @@ def ndarr2ptrs(arr):
 
     return temp
 
+# check matrix if diagonal
+def isdiag(a):
+    m = a.shape[0]
+    p,q = a.strides
+    diag = ((np.lib.stride_tricks.as_strided(a[:,1:], (m-1,m), (p+q,q)))==0).all()
+    return diag
 """
 input: 
     theta: np.zeros
@@ -45,6 +49,10 @@ output:
 """
 # theta need to be created as np.zeros(shape=(K,1))
 def ffp(theta, B, V, Delta):
+    # V must be diagonal
+    if not isdiag(V):
+        raise ValueError("Current mattrix V is not diagonal. Please use a diagonal V.")
+
     theta_ctype = theta.ctypes.data_as(POINTER(ctypes.c_double))
     B_ctype = ndarr2ptrs(B)
     V_ctype = ndarr2ptrs(V)
@@ -57,7 +65,7 @@ def ffp(theta, B, V, Delta):
     q = ctypes.c_int(int_q)
 
     # Load the shared library into ctypes
-    libname = Path().parent.absolute() / "shared/alg_lomv.so"
+    libname = Path(__file__).parent.absolute() / "alg_lomv.so"
     alg_lib = ctypes.CDLL(libname)
     ffp_C_interface = alg_lib.ffp_C_interface
     ffp_C_interface.restype = POINTER(c_double)
@@ -72,6 +80,10 @@ def ffp(theta, B, V, Delta):
 
 
 def lo_minvar(B, V, Delta):
+    # V must be diagonal
+    if not isdiag(V):
+        raise ValueError("Current mattrix V is not diagonal. Please use a diagonal V.")
+
     B_ctype = ndarr2ptrs(B)
     V_ctype = ndarr2ptrs(V)
     Delta_ctype = Delta.ctypes.data_as(POINTER(ctypes.c_double))
@@ -83,7 +95,7 @@ def lo_minvar(B, V, Delta):
     q = ctypes.c_int(int_q)
 
     # Load the shared library into ctypes
-    libname = Path().parent.absolute() / "shared/alg_lomv.so"
+    libname = Path(__file__).parent.absolute() / "alg_lomv.so"
     alg_lib = ctypes.CDLL(libname)
     lo_minvar_C_interface = alg_lib.lo_minvar_C_interface
     lo_minvar_C_interface.restype = POINTER(c_double)
@@ -98,6 +110,10 @@ def lo_minvar(B, V, Delta):
 
 
 def psi(B, V, Delta):
+    # V must be diagonal
+    if not isdiag(V):
+        raise ValueError("Current mattrix V is not diagonal. Please use a diagonal V.")
+
     B_ctype = ndarr2ptrs(B)
     V_ctype = ndarr2ptrs(V)
     Delta_ctype = Delta.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
@@ -109,7 +125,7 @@ def psi(B, V, Delta):
     q = ctypes.c_int(int_q)
     
     # Load the shared library into ctypes
-    libname = Path().parent.absolute() / "shared/alg_lomv.so"
+    libname = Path(__file__).parent.absolute() / "alg_lomv.so"
     alg_lib = ctypes.CDLL(libname)
     psi_C_interface = alg_lib.psi_C_interface    
     psi_C_interface.restype = POINTER(c_double)

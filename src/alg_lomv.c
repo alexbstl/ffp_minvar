@@ -24,7 +24,7 @@ double linf(int d, gsl_vector * a, gsl_vector * b){
 // theta: q-1, 4-1
 // B: p-q, 500-4
 // V: q-q, 4-4
-// Delta: p-p, 500-500  
+// Delta: p-p, 500-500. But D passed in here is 500-1 for ease of inverse
 // modify(return): x: q-1, 4-1
 
 // ** use unsigned int (x)

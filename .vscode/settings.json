@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": "/usr/local/bin/python3.7",
     "git.ignoreLimitWarning": true,
     "files.associations": {
         "algorithm": "c",
@@ -9,5 +8,6 @@
         "__string": "c",
         "string": "c",
         "string_view": "c"
-    }
+    },
+    "python.pythonPath": "/usr/local/Cellar/python@3.9/3.9.5/Frameworks/Python.framework/Versions/3.9/bin/python3.9"
 }
