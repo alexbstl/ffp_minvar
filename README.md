@@ -3,6 +3,7 @@ FFP_MINVAR
 # Table of Contents
 - [Installation](Installation)
 - [Documentation](Documentation)
+- [Overview](Overview)
 - [Github Description](#Github-Description)
 - [GSL Download](#GSL-Download)
   - [OSX](#osx)
@@ -70,6 +71,21 @@ lo_minvar_res = ffp_minvar_lib.lo_minvar(B, V, D)
 print(lo_minvar_res)
 ```
   
+# Overview
+FFP is used to solve quadratic programs of the form:
+```
+minimize        x' S x 
+subject to      x>=0
+                e'x = 1
+```
+where `S` is a `p x p` matrix, and `e` is a `p x 1` vector of all 1's.i  Furthermore, we assume `S` is of the form: 
+```
+S = BVB' + Δ
+```
+where `B` is a `p x q` matrix, `V` is a `q x q` diagonal matrix, and `Δ` is a `p x p` diagonal matrix.  Without loss of generality, we can assume all of these matrices are full rank.
+
+
+
 
 # Github Description
 `lib` folder stores the source python library. 
