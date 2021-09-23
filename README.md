@@ -78,7 +78,7 @@ minimize        x' S x
 subject to      x>=0
                 e'x = 1
 ```
-where `S` is a `p x p` matrix, and `e` is a `p x 1` vector of all 1's.i  Furthermore, we assume `S` is of the form: 
+where `S` is a `p x p` matrix, and `e` is a `p x 1` vector of all 1's.  Furthermore, we assume `S` is of the form: 
 ```
 S = BVB' + Δ
 ```
